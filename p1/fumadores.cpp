@@ -124,3 +124,18 @@ int main()
    for (int i=0; i<num_fumadores; i++)  fumadores[i].join();
    estanquero.join();
 }
+
+
+
+
+/*             Documentacion
+Para solucionar este problema se ha utilizado un vector de semáforos asociado a la disponibilidad de cada ingrediente.
+Cada ingrediente es representado por la posición que ocupa en el vector ingr_disp, valiendo 1 cuando está disponible y 0 cuando no.
+Además, como solo existen 3 fumadores, y 3 ingredientes, por simplicidad, a cada fumador solo le falta el ingrediente que es referenciado por el número de fumador dentro del vector de semáforos.
+Estos semáforos se inicializan a 0 porque inicialmente no se ha producido ningún ingrediente.
+   -Cada vez que el ingrediente es producido, se emite una señal al semáforo correspondiente del vector ingr_disp.
+   -Cada fumador espera (wait) a que el ingrediente esté disponible para retirarlo usando el semáforo correspondiente.
+Además, se ha utilizado un semáforo mostr_vacio, inicializado a 1 porque el mostrador está vacío inicialmente.
+   -Cuando el estanquero produce un ingrediente, espera a que el mostrador esté vacío para colocarlo y notifica a los fumadores que el ingrediente está disponible.
+   -Cuando un fumador retira un ingrediente, notifica al estanquero que el mostrador está vacío.
+*/

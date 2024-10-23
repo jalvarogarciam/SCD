@@ -23,9 +23,9 @@ unsigned
    primera_libre=0,     //índice de la primera posición libre
    primera_ocupada=0;   //índice de la primera posición ocupada
 Semaphore 
-   puede_leer(0),/*inicializado a 0 porque aun no se ha producido nada. 
+   puede_consumir(0),/*inicializado a 0 porque aun no se ha producido nada. 
    Cuando se produzca, se debe emitir un signal y wait cuando se lea */
-   puede_escribir(tam_vec);/*inicializado a tam_vec porque es el máximo de 
+   puede_producir(tam_vec);/*inicializado a tam_vec porque es el máximo de 
    veces que puede escribir antes de que se lea. 
    Cuando se lea se debe emitir un signal y wait cuando se escriba*/
 
@@ -84,12 +84,12 @@ void  funcion_hebra_productora(  )
    {
       int dato = producir_dato() ;/*Está fuera de la zona de exclusión porque es 
       ajeno al vector de datos y no hay interferencias*/
-      puede_escribir.sem_wait() ;//espera hasta que haya huecos en el array
+      puede_producir.sem_wait() ;//espera hasta que haya huecos en el array
 
       productos[primera_libre] = dato ;//introduce el nuevo producto
       primera_libre = ( primera_libre + 1 )%tam_vec;
 
-      puede_leer.sem_signal() ;//notifica que hay un nuevo producto listo para ser leido
+      puede_consumir.sem_signal() ;//notifica que hay un nuevo producto listo para ser leido
    }
 }
 
@@ -99,12 +99,12 @@ void funcion_hebra_consumidora(  )
 {
    for( unsigned i = 0 ; i < num_items ; i++ )
    {
-      puede_leer.sem_wait() ;//espera hasta que haya datos que puedan ser leidos
+      puede_consumir.sem_wait() ;//espera hasta que haya datos que puedan ser leidos
 
       int dato = productos[primera_ocupada] ;//extrae el producto
       primera_ocupada = ( primera_ocupada +1 )%tam_vec ;
 
-      puede_escribir.sem_signal() ;//notifica que hay un nuevo hueco en el array
+      puede_producir.sem_signal() ;//notifica que hay un nuevo hueco en el array
 
       consumir_dato( dato ) ;/*Está fuera de la zona de exclusión porque es 
       ajeno al vector de productos y no hay interferencias, simplemente lo consume y tarda*/
@@ -127,3 +127,26 @@ int main()
 
    test_contadores();
 }
+
+
+
+
+/*
+                     DOCUMENTACIÓN
+Para la implementación de este problema se ha utilizado un vector de tamaño arbitrario
+(aunque debe ser divisor del número de items a producir) que contendrá los datos producidos.
+Para ello, se han creado dos semáforos para controlar el acceso a este vector:
+   - puede_consumir: inicializado a 0 porque aun no se ha producido nada. Cuando se produzca, se debe emitir un signal y wait cuando se lea.
+   - puede_producir: inicializado a tam_vec porque es el máximo de veces que puede escribir antes de que se lea. Cuando se lea se debe emitir un signal y wait cuando se escriba.
+De esta forma, se garantiza que no se produzcan interferencias entre las hebras productoras y consumidoras, garantizando que cada dato se produzca y consuma una única vez.
+   +En el caso de que el vector se llene, la hebra productora esperará a que se consuma un dato para poder seguir produciendo.
+   +En el caso de que el vector esté vacío, la hebra consumidora esperará a que se produzca un dato para poder seguir consumiendo.
+
+En cuanto al manejo de indices, al haber elegido la solución Fifo, se han creado dos variables globales:
+   - primera_libre: índice de la primera posición libre del vector.
+   - primera_ocupada: índice de la primera posición ocupada del vector.
+De esta forma, cada vez que se produzca un dato, se introducirá en la posición primera_libre y se incrementará en 1, y cada vez que se consuma un dato, se extraerá de la posición primera_ocupada y se incrementará en 1.
+Sin embargo, se ha tenido en cuenta que el vector es circular, por lo que si se llega al final del vector, se volverá al principio y viceversa.
+
+
+*/
