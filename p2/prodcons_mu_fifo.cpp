@@ -22,11 +22,11 @@ using namespace std ;
 using namespace scd ;
 
 const unsigned //ambas deben ser >0 y divisores de num_items y el tamaño del buffer
-   np=10,    //número de hebras productoras
-   nc=100;    //número de hebras consumidoras
+   np=5,    //número de hebras productoras
+   nc=15;    //número de hebras consumidoras
 
 constexpr int
-   num_items = 40 ;   // número de items a producir/consumir
+   num_items = 15 ;   // número de items a producir/consumir
 int
    siguiente_dato[np] = {0} ; /*array que indica, en cada momento, 
    para cada hebra productora, cuantos items ha producido ya. 
@@ -55,7 +55,7 @@ int producir_dato( int ih )
    const int valor_producido = ih*(num_items/np) + siguiente_dato[ih];
    siguiente_dato[ih]++ ;
    mtx.lock();
-   cout << "hebra productora, produce " << valor_producido << endl << flush ;
+   cout << "hebra productora "<<ih<<", produce " << valor_producido << endl << flush ;
    mtx.unlock();
    cont_prod[valor_producido]++ ;
    return valor_producido ;
@@ -115,9 +115,7 @@ class ProdConsMu : public HoareMonitor
 
  CondVar                    // colas condicion:
    ocupadas,                //  cola donde espera el consumidor (n>0)
-   libres ,                 //  cola donde espera el productor  (n<num_celdas_total)
-   produciendo,             //  cola donde espera el productor  (para no producir varias veces el mismo elemento)
-   consumiendo;           //  cola donde espera el consumidor (para no consumir varias veces el mismo elemento)
+   libres ;                 //  cola donde espera el productor  (n<num_celdas_total)
 
  public:                    // constructor y métodos públicos
    ProdConsMu() ;             // constructor
@@ -131,8 +129,6 @@ ProdConsMu::ProdConsMu(  )
    primera_libre = primera_ocupada = n = 0 ;
    ocupadas      = newCondVar();
    libres        = newCondVar();
-   produciendo   = newCondVar(); produciendo.signal();
-   consumiendo = newCondVar(); produciendo.signal();
 }
 // -----------------------------------------------------------------------------
 // función llamada por el consumidor para extraer un dato
@@ -140,18 +136,16 @@ ProdConsMu::ProdConsMu(  )
 int ProdConsMu::leer(  )
 {
    // esperar bloqueado hasta que 0 < n
-   if ( n == 0 )
-      ocupadas.wait();
+   if ( n == 0 ) ocupadas.wait();
 
-   //cout << "leer: ocup == " << primera_libre << ", total == " << num_celdas_total << endl ;
    assert( 0 < n  );
 
    // hacer la operación de lectura, actualizando estado del monitor
-
    const int valor = buffer[primera_ocupada] ; // leer valor 
    primera_ocupada = ( primera_ocupada + 1 )%num_celdas_total; // actualiza la primera ocupada
 
    n --; // decrementa el número de productos
+
    // señalar al productor que hay un hueco libre, por si está esperando
    libres.signal();
 
@@ -166,14 +160,14 @@ void ProdConsMu::escribir( int valor )
    if ( n == num_celdas_total )
       libres.wait();
 
-   //cout << "escribir: ocup == " << primera_libre << ", total == " << num_celdas_total << endl ;
    assert( n < num_celdas_total );
 
    // hacer la operación de inserción, actualizando estado del monitor
    buffer[primera_libre] = valor ; // escribir valor
    primera_libre = ( primera_libre + 1 )%num_celdas_total; // actualiza la primera libre
-   
+
    n ++;  // incrementa el número de productos
+
    // señalar al consumidor que ya hay una celda ocupada (por si esta esperando)
    ocupadas.signal();
 }
@@ -182,7 +176,7 @@ void ProdConsMu::escribir( int valor )
 
 void funcion_hebra_productora( MRef<ProdConsMu> monitor , int ih)
 {
-   for( unsigned i = 0 ; i < num_items ; i++ )
+   for( unsigned i = 0 ; i < num_items/np ; i++ )
    {
       int valor = producir_dato( ih ) ;
       monitor->escribir( valor );
@@ -192,7 +186,7 @@ void funcion_hebra_productora( MRef<ProdConsMu> monitor , int ih)
 
 void funcion_hebra_consumidora( MRef<ProdConsMu>  monitor, int ih )
 {
-   for( unsigned i = 0 ; i < num_items ; i++ )
+   for( unsigned i = 0 ; i < num_items/nc ; i++ )
    {
       int valor = monitor->leer();
       consumir_dato( valor ) ;

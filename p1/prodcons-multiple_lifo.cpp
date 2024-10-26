@@ -122,7 +122,7 @@ void  funcion_hebra_productora(int i_hp)
 
 
       productos[primera_libre]=dato;//introduce el nuevo producto
-      primera_libre = ( primera_libre + 1 )%tam_vec; //actualiza el índice de la primera posición libre
+      primera_libre ++; //actualiza el índice de la primera posición libre
 
       puede_consumir.sem_signal();//notifica que hay un nuevo producto listo para ser leido
       escribe.unlock(); //otra hebra puede producir
@@ -140,7 +140,7 @@ void funcion_hebra_consumidora(int i_hc)
 
       //extrae el producto
       int dato = primera_libre == 0? productos[tam_vec-1]:productos[primera_libre-1];
-      primera_libre = primera_libre==0? tam_vec-1:( primera_libre - 1 ); //actualiza la primera posición ocupada
+      primera_libre --; //actualiza la primera posición ocupada
 
       puede_producir.sem_signal();  //notifica que hay un nuevo hueco en el array
       lee.unlock();//otra hebra puede consumir
