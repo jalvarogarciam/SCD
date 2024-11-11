@@ -27,7 +27,7 @@ un fumador haya cogido el ingrediente*/
 // Función que simula la acción de producir un ingrediente, como un retardo
 // aleatorio de la hebra (devuelve número de ingrediente producido)
 
-int producir_ingrediente()
+int ProducirIngrediente()
 {
    // calcular milisegundos aleatorios de duración de la acción de fumar)
    chrono::milliseconds duracion_produ( aleatorio<10,100>() );
@@ -53,7 +53,7 @@ void funcion_hebra_estanquero(  )
 {
    while (true)
    {
-      int ingrediente = producir_ingrediente(); 
+      int ingrediente = ProducirIngrediente(); 
       // primero produce un ingrediente, aunque el mostrador esté lleno
 
       mostr_vacio.sem_wait(); //espera a que el mostrador esté vacío para colocarlo

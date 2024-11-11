@@ -5,3 +5,8 @@ p2/bin/prodcons1_su
 p2/bin/prodcons1_su
 p2/archivo.txt
 p1/bin/prodcons-multiple_lifo
+.vscode/settings.json
+p1/bin/fumadores
+p1/bin/prodcons_mu_fifo
+p1/bin/prodcons_mu_lifo
+p1/bin/fumadores

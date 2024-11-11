@@ -1,13 +1,13 @@
 // -----------------------------------------------------------------------------
 //
 // Sistemas concurrentes y Distribuidos.
-// Seminario 2. Introducción a los monitores en C++11.
+// Practica 2. Introducción a los monitores en C++11.
 //
-// Archivo: prodcons1_su.cpp
+// Archivo: prodcons_mu_lifo.cpp
 //
 // Ejemplo de un monitor en C++11 con semántica SU, para el problema
 // del productor/consumidor, con productor y consumidor únicos.
-// Opcion FIFO
+// Opcion LIFO
 // -----------------------------------------------------------------------------------
 
 
@@ -47,6 +47,12 @@ unsigned
 // funciones comunes a las dos soluciones (fifo y lifo)
 //----------------------------------------------------------------------
 
+/**
+ * @brief Simula un retardo aleatorio de la hebra productora y 
+ * muestra en pantalla que ha producido un valor
+ * @param ih indice de la hebra productora
+ * @return int valor producido
+ */
 int producir_dato( int ih )
 {
    assert( ih < np && ih >= 0 );
@@ -62,6 +68,11 @@ int producir_dato( int ih )
 }
 //----------------------------------------------------------------------
 
+/**
+ * @brief Simula un retardo aleatorio de la hebra y muestra en pantalla 
+ * que ha consumido un valor
+ * @param valor_consumir valor a consumir
+ */
 void consumir_dato( unsigned valor_consumir )
 {
    if ( num_items <= valor_consumir )
@@ -100,8 +111,10 @@ void test_contadores()
 }
 
 // *****************************************************************************
-// clase para monitor buffer, version FIFO, semántica SC, multiples prod/cons
-
+/**
+ * @brief Monitor para el problema del productor-consumidor multiple
+ * con un buffer de tamaño fijo y semántica SU
+ */
 class ProdConsMu : public HoareMonitor
 {
  private:
@@ -116,58 +129,56 @@ class ProdConsMu : public HoareMonitor
    libres ;                 //  cola donde espera el productor  (n<num_celdas_total)
 
  public:                    // constructor y métodos públicos
-   ProdConsMu() ;             // constructor
-   int  leer();                // extraer un valor (sentencia L) (consumidor)
-   void escribir( int valor ); // insertar un valor (sentencia E) (productor)
+   ProdConsMu(){
+      primera_libre = 0 ;
+      ocupadas      = newCondVar();
+      libres        = newCondVar();
+   }
+
+   /**
+    * @brief espera a que haya un valor en el buffer y lo lee, además de indicar
+    * que ha dejado un hueco libre en el buffer.
+    * @return int valor leido
+    */
+   int  leer(){
+      // esperar bloqueado hasta que 0 < n
+      if ( primera_libre == 0 ) ocupadas.wait();
+      assert( 0 < primera_libre  );
+
+      // hacer la operación de lectura, actualizando estado del monitor
+      primera_libre --; // actualiza el numero de elementosç
+      const int valor = buffer[primera_libre] ; // leer valor 
+
+      // señalar al productor que hay un hueco libre, por si está esperando
+      libres.signal();
+
+      // devolver valor
+      return valor ;
+   }
+
+   /**
+    * @brief espera a que haya un hueco libre en el buffer y escribe un 
+    * valor en el buffer
+    * @param valor valor a escribir
+    */
+   void escribir( int valor ){
+      // esperar bloqueado hasta que primera_libre < num_celdas_total
+      if ( primera_libre == num_celdas_total ) libres.wait();
+      assert( primera_libre < num_celdas_total );
+
+      // hacer la operación de inserción, actualizando estado del monitor
+      buffer[primera_libre] = valor ; // escribir valor
+      primera_libre ++; // actualiza número de productos
+
+      //escribiendo.unlock(); //señala que ya ha terminado de escribir
+      // señalar al consumidor que ya hay una celda ocupada (por si esta esperando)
+      ocupadas.signal();
+   } 
 } ;
 // -----------------------------------------------------------------------------
 
-ProdConsMu::ProdConsMu(  )
-{
-   primera_libre = 0 ;
-   ocupadas      = newCondVar();
-   libres        = newCondVar();
-}
-// -----------------------------------------------------------------------------
-// función llamada por el consumidor para extraer un dato
-
-int ProdConsMu::leer(  )
-{
-   // esperar bloqueado hasta que 0 < n
-   if ( primera_libre == 0 )
-      ocupadas.wait();
-
-   assert( 0 < primera_libre  );
 
 
-   // hacer la operación de lectura, actualizando estado del monitor
-   primera_libre --; // actualiza el numero de elementosç
-   const int valor = buffer[primera_libre] ; // leer valor 
-
-   // señalar al productor que hay un hueco libre, por si está esperando
-   libres.signal();
-
-   // devolver valor
-   return valor ;
-}
-// -----------------------------------------------------------------------------
-
-void ProdConsMu::escribir( int valor )
-{
-   // esperar bloqueado hasta que primera_libre < num_celdas_total
-   if ( primera_libre == num_celdas_total )
-      libres.wait();
-
-   assert( primera_libre < num_celdas_total );
-
-   // hacer la operación de inserción, actualizando estado del monitor
-   buffer[primera_libre] = valor ; // escribir valor
-   primera_libre ++; // actualiza número de productos
-
-   //escribiendo.unlock(); //señala que ya ha terminado de escribir
-   // señalar al consumidor que ya hay una celda ocupada (por si esta esperando)
-   ocupadas.signal();
-}
 // *****************************************************************************
 // funciones de hebras
 
@@ -179,7 +190,6 @@ void funcion_hebra_productora( MRef<ProdConsMu> monitor , int ih)
       monitor->escribir( valor );
    }
 }
-// -----------------------------------------------------------------------------
 
 void funcion_hebra_consumidora( MRef<ProdConsMu>  monitor, int ih )
 {
@@ -190,6 +200,8 @@ void funcion_hebra_consumidora( MRef<ProdConsMu>  monitor, int ih )
    }
 }
 // -----------------------------------------------------------------------------
+
+
 
 int main()
 {

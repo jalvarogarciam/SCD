@@ -1,3 +1,15 @@
+// -----------------------------------------------------------------------------
+//
+// Sistemas concurrentes y Distribuidos.
+// Practica 2. Introducción a los monitores en C++11.
+//
+// Archivo: prodcons_mu_fifo.cpp
+//
+// Ejemplo de un monitor en C++11 con semántica SU, para el problema
+// del productor/consumidor, con productor y consumidor únicos.
+// Opcion FIFO
+// -----------------------------------------------------------------------------------
+
 #include <iostream>
 #include <cassert>
 #include <thread>
@@ -56,7 +68,13 @@ zona de producción y consumo de productos respectivamente*/
 // funciones comunes a las dos soluciones (fifo y lifo)
 //----------------------------------------------------------------------
 
-unsigned producir_dato(int ih)
+/**
+ * @brief Simula un retardo aleatorio de la hebra productora y 
+ * muestra en pantalla que ha producido un valor
+ * @param ih indice de la hebra productora
+ * @return int valor producido
+ */
+int producir_dato( int ih )
 {
    assert( ih < np && ih >= 0 );
 
@@ -64,29 +82,31 @@ unsigned producir_dato(int ih)
    const int valor_producido = ih*(num_items/np) + siguiente_dato[ih];
    siguiente_dato[ih]++ ;
    mtx.lock();
-   cout << "hebra productora, produce " << valor_producido << endl << flush ;
+   cout << "hebra productora "<<ih<<", produce " << valor_producido << endl << flush ;
    mtx.unlock();
    cont_prod[valor_producido]++ ;
    return valor_producido ;
 }
-
 //----------------------------------------------------------------------
 
-void consumir_dato( unsigned dato)
+/**
+ * @brief Simula un retardo aleatorio de la hebra y muestra en pantalla 
+ * que ha consumido un valor
+ * @param valor_consumir valor a consumir
+ */
+void consumir_dato( unsigned valor_consumir )
 {
-   if ( num_items <= dato )
+   if ( num_items <= valor_consumir )
    {
-      cout << " valor a consumir === " << dato << ", num_items == " << num_items << endl ;
-      assert( dato < num_items );
+      cout << " valor a consumir === " << valor_consumir << ", num_items == " << num_items << endl ;
+      assert( valor_consumir < num_items );
    }
-   cont_cons[dato] ++ ;
+   cont_cons[valor_consumir] ++ ;
    this_thread::sleep_for( chrono::milliseconds( aleatorio<min_ms,max_ms>() ));
    mtx.lock();
-   cout << "                  hebra consumidora, consume: " << dato << endl ;
+   cout << "                  hebra consumidora, consume: " << valor_consumir << endl ;
    mtx.unlock();
 }
-
-
 //----------------------------------------------------------------------
 
 void test_contadores()
@@ -174,21 +194,3 @@ int main()
 
    test_contadores();
 }
-
-
-
-
-
-
-
-/*                   Documentación de la solución
-La única diferencia entre esta solución y la FIFO es que en esta solución,
-la hebra consumidora extrae los productos en orden inverso al que se introdujeron.
-Para ello, solo se ha necesitado usar una única variable para el acceso a la primera posición libre
-y ocupada del array de productos.
-De esta forma, la hebra consumidora extrae el producto anterior a la posición primera_libre, y lo decrementa.
-La hebra productora, por su parte, introduce el producto en la posición primera_libre y la incrementa.
-Siempre se ha de tener en cuenta que la primera posición libre y ocupada se actualizan de forma circular.
-
-
-*/

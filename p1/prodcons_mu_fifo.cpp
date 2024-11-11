@@ -3,6 +3,7 @@
 #include <thread>
 #include <mutex>
 #include <random>
+#include <chrono>
 #include "scd.h"
 
 using namespace std ;
@@ -11,8 +12,8 @@ using namespace scd ;
 //**********************************************************************
 // Variables globales
 const unsigned //ambas deben ser >0 y divisores de num_items y tam_vec
-   np=10,    //número de hebras productoras
-   nc=100;    //número de hebras consumidoras
+   np=5,    //número de hebras productoras
+   nc=10;    //número de hebras consumidoras
 
 const unsigned
    num_items = 100 ,   // número de items
@@ -56,33 +57,45 @@ mutex escribe, lee;
 // funciones comunes a las dos soluciones (fifo y lifo)
 //----------------------------------------------------------------------
 
-unsigned producir_dato(int ih)
+/**
+ * @brief Simula un retardo aleatorio de la hebra productora y 
+ * muestra en pantalla que ha producido un valor
+ * @param ih indice de la hebra productora
+ * @return int valor producido
+ */
+int producir_dato( int ih )
 {
    assert( ih < np && ih >= 0 );
-   this_thread::sleep_for( chrono::milliseconds( aleatorio<20,100>() ));
-   const unsigned dato_producido = ih*(num_items/np) + siguiente_dato[ih];
+
+   this_thread::sleep_for( chrono::milliseconds( aleatorio<min_ms,max_ms>() ));
+   const int valor_producido = ih*(num_items/np) + siguiente_dato[ih];
    siguiente_dato[ih]++ ;
-   cont_prod[dato_producido] ++ ;
-   cout << "producido: " << dato_producido << endl << flush ;
-   return dato_producido ;
+   mtx.lock();
+   cout << "hebra productora "<<ih<<", produce " << valor_producido << endl << flush ;
+   mtx.unlock();
+   cont_prod[valor_producido]++ ;
+   return valor_producido ;
 }
 //----------------------------------------------------------------------
 
-void consumir_dato( unsigned dato)
+/**
+ * @brief Simula un retardo aleatorio de la hebra y muestra en pantalla 
+ * que ha consumido un valor
+ * @param valor_consumir valor a consumir
+ */
+void consumir_dato( unsigned valor_consumir )
 {
-   if ( num_items <= dato )
+   if ( num_items <= valor_consumir )
    {
-      cout << " valor a consumir === " << dato << ", num_items == " << num_items << endl ;
-      assert( dato < num_items );
+      cout << " valor a consumir === " << valor_consumir << ", num_items == " << num_items << endl ;
+      assert( valor_consumir < num_items );
    }
-   cont_cons[dato] ++ ;
+   cont_cons[valor_consumir] ++ ;
    this_thread::sleep_for( chrono::milliseconds( aleatorio<min_ms,max_ms>() ));
    mtx.lock();
-   cout << "                  hebra consumidora, consume: " << dato << endl ;
+   cout << "                  hebra consumidora, consume: " << valor_consumir << endl ;
    mtx.unlock();
 }
-
-
 //----------------------------------------------------------------------
 
 void test_contadores()
@@ -142,7 +155,6 @@ void funcion_hebra_consumidora(int i_hc)
 
       consumir_dato(dato);/*Está fuera de la zona de exclusión porque es 
       ajeno al vector de productos y no hay interferencias, simplemente lo consume y tarda*/
-
    }
 }
 //----------------------------------------------------------------------
@@ -155,6 +167,7 @@ int main()
         << "------------------------------------------------------------------" << endl
         << flush ;
    
+   auto start = chrono::high_resolution_clock::now();
 
    //Crea e inicializa el array de np y nc hebras con su funcion e indice para cada hebra.
    thread hebrasp[np], hebrasc[nc];
@@ -166,23 +179,9 @@ int main()
    for (int i=0; i<np; i++)  hebrasp[i].join();
    for (int i=0; i<nc; i++)  hebrasc[i].join();
 
+   auto end = chrono::high_resolution_clock::now();
+
    test_contadores();
+
+   cout << "Tiempo de ejecución: " << chrono::duration_cast<chrono::milliseconds>(end-start).count() << "ms" << endl;
 }
-
-
-
-
-
-
-/*                   Documentación
-En la mísma línea que el problema anterior, para garantizar que cada dato se produce y consume una única vez,
-se han implementado los mismos semáforos puede_consumir y puede_producir.
-Sin embargo, al tener varias hebras productoras y consumidoras, se han tenido que añadir dos mutex para garantizar la exclusión mútua:
-- escribe: para que ninguna otra hebra pueda producir en el array mientras una lo hace (no podrá escoger el mismo índice para escribir que la otra).
-- lee: para que ninguna otra hebra pueda consumir en el array mientras una lo hace (no podrá escoger el mismo índice para leer que la otra).
-Además, como cada hebra productora tiene asignados un rango de datos a producir, se ha añadido un array siguiente_dato que indica cuantos datos ha producido cada hebra.
-
-Al igual que en el problema anterior, se usan los dos indices primera_libre y primera_ocupada para indicar la primera posición libre y ocupada del array de productos.
-
-
-*/
