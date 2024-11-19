@@ -110,59 +110,60 @@ class ProdConsSu1 : public HoareMonitor
    libres ;                 //  cola donde espera el productor  (n<num_celdas_total)
 
  public:                    // constructor y métodos públicos
-   ProdConsSu1() ;             // constructor
-   int  leer();                // extraer un valor (sentencia L) (consumidor)
-   void escribir( int valor ); // insertar un valor (sentencia E) (productor)
+   ProdConsSu1(){
+      primera_libre = primera_ocupada = n = 0 ;
+      ocupadas      = newCondVar();
+      libres        = newCondVar();
+   }
+
+   /**
+    * @brief Lee un valor del buffer
+    * @return valor leído
+    */
+   int  leer(){
+      // esperar bloqueado hasta que 0 < productos
+      if ( n == 0 ) ocupadas.wait();
+
+      assert( 0 < n  );
+
+      // hacer la operación de lectura, actualizando estado del monitor
+      const int valor = buffer[primera_ocupada] ; // leer valor 
+      primera_ocupada = ( primera_ocupada + 1 )%num_celdas_total; // actualiza la primera ocupada
+
+      n --; // decrementa el número de productos
+
+      // señalar al productor que hay un hueco libre, por si está esperando
+      libres.signal();
+
+      // devolver valor
+      return valor ;
+   }
+
+   /**
+    * @brief Escribe un valor en el buffer
+    * @param valor valor a escribir
+    */
+   void escribir( int valor ){
+      // esperar bloqueado hasta que primera_libre < num_celdas_total
+      if ( n == num_celdas_total )
+         libres.wait();
+
+      assert( n < num_celdas_total );
+
+      // hacer la operación de inserción, actualizando estado del monitor
+      buffer[primera_libre] = valor ; // escribir valor
+      primera_libre = ( primera_libre + 1 )%num_celdas_total; // actualiza la primera libre
+
+      n ++;  // incrementa el número de productos
+
+      // señalar al consumidor que ya hay una celda ocupada (por si esta esperando)
+      ocupadas.signal();
+   }
 } ;
 // -----------------------------------------------------------------------------
 
-ProdConsSu1::ProdConsSu1(  )
-{
-   primera_libre = primera_ocupada = n = 0 ;
-   ocupadas      = newCondVar();
-   libres        = newCondVar();
-}
-// -----------------------------------------------------------------------------
-// función llamada por el consumidor para extraer un dato
 
-int ProdConsSu1::leer(  )
-{
-   // esperar bloqueado hasta que 0 < productos
-   if ( n == 0 ) ocupadas.wait();
 
-   assert( 0 < n  );
-
-   // hacer la operación de lectura, actualizando estado del monitor
-   const int valor = buffer[primera_ocupada] ; // leer valor 
-   primera_ocupada = ( primera_ocupada + 1 )%num_celdas_total; // actualiza la primera ocupada
-
-   n --; // decrementa el número de productos
-
-   // señalar al productor que hay un hueco libre, por si está esperando
-   libres.signal();
-
-   // devolver valor
-   return valor ;
-}
-// -----------------------------------------------------------------------------
-
-void ProdConsSu1::escribir( int valor )
-{
-   // esperar bloqueado hasta que primera_libre < num_celdas_total
-   if ( n == num_celdas_total )
-      libres.wait();
-
-   assert( n < num_celdas_total );
-
-   // hacer la operación de inserción, actualizando estado del monitor
-   buffer[primera_libre] = valor ; // escribir valor
-   primera_libre = ( primera_libre + 1 )%num_celdas_total; // actualiza la primera libre
-
-   n ++;  // incrementa el número de productos
-
-   // señalar al consumidor que ya hay una celda ocupada (por si esta esperando)
-   ocupadas.signal();
-}
 // *****************************************************************************
 // funciones de hebras
 

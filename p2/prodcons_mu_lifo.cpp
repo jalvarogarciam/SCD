@@ -6,7 +6,7 @@
 // Archivo: prodcons_mu_lifo.cpp
 //
 // Ejemplo de un monitor en C++11 con semántica SU, para el problema
-// del productor/consumidor, con productor y consumidor únicos.
+// del productor/consumidor, con productor y consumidor múltiples.
 // Opcion LIFO
 // -----------------------------------------------------------------------------------
 

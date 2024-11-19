@@ -133,6 +133,13 @@ void funcion_hebra_fumador( MRef<Estanco> estanco, int ih )
    }
 }
 
+void funcion_hebra_viciosa()
+{
+   while(true){
+    
+   }
+}
+
 //----------------------------------------------------------------------
 
 int main()
@@ -147,6 +154,7 @@ int main()
 
    //Crea e inicializa el array de np y nc hebras con su funcion e indice para cada hebra.
    thread estanquero = thread(funcion_hebra_estanquero, estanco);
+   thread viciosa = thread(funcion_hebra_viciosa);
    thread fumadores[num_fumadores];
    for (int i=0; i<num_fumadores; i++)  
       fumadores[i] = thread(funcion_hebra_fumador, estanco, i);

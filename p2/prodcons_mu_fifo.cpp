@@ -6,7 +6,7 @@
 // Archivo: prodcons_mu_fifo.cpp
 //
 // Ejemplo de un monitor en C++11 con semántica SU, para el problema
-// del productor/consumidor, con productor y consumidor únicos.
+// del productor/consumidor, con productor y consumidor múltiples.
 // Opcion FIFO
 // -----------------------------------------------------------------------------------
 
@@ -210,7 +210,7 @@ void funcion_hebra_consumidora( MRef<ProdConsMu>  monitor, int ih )
 int main()
 {
    cout << "--------------------------------------------------------------------" << endl
-        << "Problema del productor-consumidor únicos (Monitor SU, buffer LIFO). " << endl
+        << "Problema del productor-consumidor únicos (Monitor SU, buffer FIFO). " << endl
         << "--------------------------------------------------------------------" << endl
         << flush ;
 
@@ -231,3 +231,5 @@ int main()
 
    cout << "Tiempo de ejecución: " << chrono::duration_cast<chrono::milliseconds>(end-start).count() << "ms" << endl;
 }
+
+
