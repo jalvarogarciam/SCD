@@ -75,7 +75,7 @@ void funcion_hebra_estanquero1( )
      
      //comprueba que pueda trabajar
       if (ingredientes_e1%6!=0)trabaja_e1.sem_signal(); //sigue
-      else trabaja_e2.sem_wait();	//cede el paso
+      else trabaja_e2.sem_signal();	//cede el paso
 		
 	
 	
