@@ -25,7 +25,7 @@ const int
    etiq_productor        = 0 ,
    etiq_consumidor       = 2 ,
    id_buffer             = 4 ,
-   num_procesos_esperado = 10 ,
+   num_procesos_esperado = 10,
    num_items             = 20,
    tam_vector            = 10;
 
@@ -128,23 +128,19 @@ void funcion_buffer()
       MPI_Recv( &valor, 1, MPI_INT, id_emisor_aceptable, 0, MPI_COMM_WORLD, &estado );
 
       // 3. procesar el mensaje recibido
+      // leer emisor del mensaje en metadatos
+      if ( estado.MPI_SOURCE < 4){ // si ha sido un productor: insertar en buffer
+         buffer[primera_libre] = valor ;
+         primera_libre = (primera_libre+1) % tam_vector ;
+         num_celdas_ocupadas++ ;
+         cout << "Buffer ha recibido valor " << valor << endl ;
 
-      switch( estado.MPI_SOURCE ) // leer emisor del mensaje en metadatos
-      {
-         case id_productor: // si ha sido el productor: insertar en buffer
-            buffer[primera_libre] = valor ;
-            primera_libre = (primera_libre+1) % tam_vector ;
-            num_celdas_ocupadas++ ;
-            cout << "Buffer ha recibido valor " << valor << endl ;
-            break;
-
-         case id_consumidor: // si ha sido el consumidor: extraer y enviarle
-            valor = buffer[primera_ocupada] ;
-            primera_ocupada = (primera_ocupada+1) % tam_vector ;
-            num_celdas_ocupadas-- ;
-            cout << "Buffer va a enviar valor " << valor << endl ;
-            MPI_Ssend( &valor, 1, MPI_INT, id_consumidor, 0, MPI_COMM_WORLD);
-            break;
+      }else{ // si ha sido el consumidor: extraer y enviarle
+         valor = buffer[primera_ocupada] ;
+         primera_ocupada = (primera_ocupada+1) % tam_vector ;
+         num_celdas_ocupadas-- ;
+         cout << "Buffer va a enviar valor " << valor << endl ;
+         MPI_Ssend( &valor, 1, MPI_INT, id_consumidor, 0, MPI_COMM_WORLD);
       }
    }
 }
