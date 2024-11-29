@@ -1,34 +1,24 @@
 .SUFFIXES:
-.PHONY:    pc,pc2,pcm,fp,f,fi,fc,clean
+.PHONY:    pc,filo,clean
 
+bin		:= ./bin
 compilador := mpicxx 
 flagsc     := -std=c++11 -g -Wall
 
-pc: prodcons_mpi_exe
-	mpirun -oversubscribe -np  3 ./$<
 
-pca: prodcons-alt_mpi_exe
-	mpirun -oversubscribe  -np  3 ./$<
+all: pc
 
-pc2: prodcons2_mpi_exe
-	mpirun -oversubscribe  -np  3 ./$<
 
-pcm: prodcons2-mu_mpi_exe
-	mpirun -oversubscribe  -np  10 ./$<
+pc: $(bin)/prodcons
+	mpirun -oversubscribe -np  10 ./$<
 
-fp: filosofos-plantilla_mpi_exe
+
+filo: $(bin)/filosofos
 	mpirun -oversubscribe  -np 10 ./$<
 
-fi: filosofos-interb_mpi_exe
-	mpirun -oversubscribe  -np 10 ./$<
 
-f: filosofos_mpi_exe
-	mpirun -oversubscribe  -np 10 ./$<
 
-fc: filosofos-cam_mpi_exe
-	mpirun -oversubscribe  -np 11 ./$<
-
-%_mpi_exe: %.cpp
+$(bin)/%: %.cpp
 	$(compilador) $(flagsc) -o $@ $<
 
 clean:
