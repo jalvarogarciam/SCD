@@ -13,7 +13,7 @@ $(bin)/prodcons: prodcons.cpp
 
 $(bin)/filosofos: filosofos.cpp
 	$(compilador) $(flagsc) -o $@ $<
-	mpirun -oversubscribe  -np 10 $<
+	mpirun -oversubscribe  -np 10 $@
 	
 
 clean:
