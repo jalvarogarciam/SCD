@@ -1,25 +1,20 @@
-.SUFFIXES:
-.PHONY:    pc,filo,clean
-
 bin		:= ./bin
 compilador := mpicxx 
 flagsc     := -std=c++11 -g -Wall
 
 
-all: pc
+all: $(bin)/filosofos
 
 
-pc: $(bin)/prodcons
-	mpirun -oversubscribe -np  10 ./$<
-
-
-filo: $(bin)/filosofos
-	mpirun -oversubscribe  -np 10 ./$<
-
-
-
-$(bin)/%: %.cpp
+$(bin)/prodcons: prodcons.cpp
 	$(compilador) $(flagsc) -o $@ $<
+	mpirun -oversubscribe  -np 10 $@
+
+
+$(bin)/filosofos: filosofos.cpp
+	$(compilador) $(flagsc) -o $@ $<
+	mpirun -oversubscribe  -np 10 $<
+	
 
 clean:
-	rm -rf *_exe *.dSYM
+	rm -r $(bin)/*
