@@ -15,6 +15,11 @@
 #include <iostream>
 #include <iomanip>
 
+#define DEBUG true
+#ifdef DEBUG
+#define DEBUG_DELAY milliseconds(200)
+#endif
+
 using namespace std;
 using namespace std::this_thread ;
 using namespace std::chrono ;
@@ -25,8 +30,10 @@ const int
    num_procesos  = num_filo_ten + 1 ,  // número de procesos total (+1 por el camarero)
    id_camarero = 10;
 const int
-   etiq_sentarse = 932847,
-   etiq_levantarse = 8971324;
+   etiq_coger = 0,
+   etiq_soltar = 1,
+   etiq_sentarse = 2,
+   etiq_levantarse = 3;
 
 //**********************************************************************
 // plantilla de función para generar un entero aleatorio uniformemente
@@ -52,15 +59,21 @@ void funcion_filosofos( int id )
   for(int i=0; true ;i++)
   {
       cout <<"Filósofo " <<id << " solicita sentarse." <<endl;
+      if (DEBUG) sleep_for( DEBUG_DELAY );
       MPI_Ssend( &peticion, 1, MPI_INT, id_camarero, etiq_sentarse, MPI_COMM_WORLD);
+      if (DEBUG) sleep_for( DEBUG_DELAY );
       //...solicitar sentarse
 
       cout << setw(10)<< ' ' <<"Filósofo " <<id << " solicita ten. izq." <<id_ten_izq <<endl;
-      MPI_Ssend( &peticion, 1, MPI_INT, id_ten_izq, 0, MPI_COMM_WORLD);
+      if (DEBUG) sleep_for( DEBUG_DELAY );
+      MPI_Ssend( &peticion, 1, MPI_INT, id_ten_izq, etiq_coger, MPI_COMM_WORLD);
+      if (DEBUG) sleep_for( DEBUG_DELAY );
       //... solicitar el tenedor izquierdo
 
       cout << setw(10)<< ' ' <<"Filósofo " <<id <<" solicita ten. der." <<id_ten_der <<endl;
-      MPI_Ssend( &peticion, 1, MPI_INT, id_ten_der, 0, MPI_COMM_WORLD);
+      if (DEBUG) sleep_for( DEBUG_DELAY );
+      MPI_Ssend( &peticion, 1, MPI_INT, id_ten_der, etiq_coger, MPI_COMM_WORLD);
+      if (DEBUG) sleep_for( DEBUG_DELAY );
       //... solicitar el tenedor derecho
 
 
@@ -69,15 +82,18 @@ void funcion_filosofos( int id )
 
 
       cout << setw(10)<< ' ' <<"Filósofo " <<id <<" suelta ten. izq. " <<id_ten_izq <<endl;
-      MPI_Ssend( &peticion, 1, MPI_INT, id_ten_izq, 0, MPI_COMM_WORLD);
+      MPI_Ssend( &peticion, 1, MPI_INT, id_ten_izq, etiq_soltar, MPI_COMM_WORLD);
+      if (DEBUG) sleep_for( DEBUG_DELAY );
       // ... soltar el tenedor izquierdo
       
       cout << setw(10)<< ' ' << "Filósofo " <<id <<" suelta ten. der. " <<id_ten_der <<endl;
-      MPI_Ssend( &peticion, 1, MPI_INT, id_ten_der, 0, MPI_COMM_WORLD);
+      MPI_Ssend( &peticion, 1, MPI_INT, id_ten_der, etiq_soltar, MPI_COMM_WORLD);
+      if (DEBUG) sleep_for( DEBUG_DELAY );
       // ... soltar el tenedor derecho
 
       cout <<"Filósofo " <<id << " solicita levantarse." <<endl;
       MPI_Ssend( &peticion, 1, MPI_INT, id_camarero, etiq_levantarse, MPI_COMM_WORLD);
+      if (DEBUG) sleep_for( DEBUG_DELAY );
       //... solicitar levantarse
 
       cout<< setw(20)<< ' ' << "Filosofo " << id << " comienza a pensar" << endl;
@@ -86,7 +102,6 @@ void funcion_filosofos( int id )
 }
 
 // ---------------------------------------------------------------------
-
 void funcion_camarero()
 {
    const int max_sentados = num_filosofos-1; // 4
@@ -116,8 +131,9 @@ void funcion_camarero()
    }
 }
 
-// ---------------------------------------------------------------------
 
+
+// ---------------------------------------------------------------------
 void funcion_tenedores( int id )
 {
   int valor, id_filosofo ;  // valor recibido, identificador del filósofo
@@ -125,16 +141,18 @@ void funcion_tenedores( int id )
 
   for (int i=0; true ; i++)
   {
-     MPI_Recv( &valor, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &estado );
+     MPI_Recv( &valor, 1, MPI_INT, MPI_ANY_SOURCE, etiq_coger, MPI_COMM_WORLD, &estado );
      id_filosofo = estado.MPI_SOURCE ;
      cout << setw(10)<< ' ' <<"Ten. " <<id <<" ha sido cogido por filo. " <<id_filosofo <<endl;
 
-     MPI_Recv( &valor, 1, MPI_INT, id_filosofo, MPI_ANY_TAG, MPI_COMM_WORLD, &estado );
+     MPI_Recv( &valor, 1, MPI_INT, id_filosofo, etiq_soltar, MPI_COMM_WORLD, &estado );
      cout << setw(10)<< ' ' <<"Ten. "<< id<< " ha sido liberado por filo. " <<id_filosofo <<endl ;
   }
 }
-// ---------------------------------------------------------------------
 
+
+
+// ---------------------------------------------------------------------
 int main( int argc, char** argv )
 {
    int id_propio, num_procesos_actual ;
@@ -149,15 +167,15 @@ int main( int argc, char** argv )
       // ejecutar la función correspondiente a 'id_propio'
       if (id_propio == id_camarero)
          funcion_camarero();
-      else if ( id_propio % 2 == 0 )          // si es par
-         funcion_filosofos( id_propio ); //   es un filósofo
-      else                               // si es impar
-         funcion_tenedores( id_propio ); //   es un tenedor
+      else if ( id_propio % 2 == 0 ) 
+         funcion_filosofos( id_propio ); //los pares son filósofos
+      else                               
+         funcion_tenedores( id_propio ); //los impares son tenedores
    }
    else
    {
       if ( id_propio == 0 ) // solo el primero escribe error, indep. del rol
-      { cout << "el número de procesos esperados es:    " << num_procesos << endl
+      { cerr << "el número de procesos esperados es:    " << num_procesos << endl
              << "el número de procesos en ejecución es: " << num_procesos_actual << endl
              << "(programa abortado)" << endl ;
       }

@@ -25,6 +25,14 @@ const int
    num_filo_ten  = 2*num_filosofos, // número de filósofos y tenedores 
    num_procesos  = num_filo_ten ;   // número de procesos total (por ahora solo hay filo y ten)
 
+const int 
+   etiq_coger = 0,
+   etiq_soltar = 1;
+
+#define DEBUG true
+#ifdef DEBUG
+#define DEBUG_DELAY milliseconds(300)
+#endif
 
 //**********************************************************************
 // plantilla de función para generar un entero aleatorio uniformemente
@@ -50,19 +58,23 @@ void funcion_filosofos( int id )
   {
       if (id != 0){
          cout <<"Filósofo " <<id << " solicita ten. izq." <<id_ten_izq <<endl;
-         MPI_Ssend( &id, 1, MPI_INT, id_ten_izq, 0, MPI_COMM_WORLD);
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_izq, etiq_coger, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
          //... solicitar el tenedor izquierdo
 
          cout <<"Filósofo " <<id <<" solicita ten. der." <<id_ten_der <<endl;
-         MPI_Ssend( &id, 1, MPI_INT, id_ten_der, 0, MPI_COMM_WORLD);
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_der, etiq_coger, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
          //... solicitar el tenedor derecho
       }else{
          cout <<"Filósofo " <<id << " solicita ten. der." <<id_ten_izq <<endl;
-         MPI_Ssend( &id, 1, MPI_INT, id_ten_der, 0, MPI_COMM_WORLD);
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_der, etiq_coger, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
          //... solicitar el tenedor derecho
 
          cout <<"Filósofo " <<id <<" solicita ten. izq." <<id_ten_der <<endl;
-         MPI_Ssend( &id, 1, MPI_INT, id_ten_izq, 0, MPI_COMM_WORLD);
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_izq, etiq_coger, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
          //... solicitar el tenedor izquierdo
       }
 
@@ -71,22 +83,27 @@ void funcion_filosofos( int id )
 
       if (id != 0 ){
          cout <<"Filósofo " <<id <<" suelta ten. izq. " <<id_ten_izq <<endl;
-         MPI_Ssend( &id, 1, MPI_INT, id_ten_izq, 0, MPI_COMM_WORLD);
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_izq, etiq_soltar, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
          // ... soltar el tenedor izquierdo
          
          cout<< "Filósofo " <<id <<" suelta ten. der. " <<id_ten_der <<endl;
-         MPI_Ssend( &id, 1, MPI_INT, id_ten_der, 0, MPI_COMM_WORLD);
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_der, etiq_soltar, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
          // ... soltar el tenedor derecho
       }else{
          cout<< "Filósofo " <<id <<" suelta ten. der. " <<id_ten_der <<endl;
-         MPI_Ssend( &id, 1, MPI_INT, id_ten_der, 0, MPI_COMM_WORLD);
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_der, etiq_soltar, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
          // ... soltar el tenedor derecho
 
          cout <<"Filósofo " <<id <<" suelta ten. izq. " <<id_ten_izq <<endl;
-         MPI_Ssend( &id, 1, MPI_INT, id_ten_izq, 0, MPI_COMM_WORLD);
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_izq, etiq_soltar, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
          // ... soltar el tenedor izquierdo
       }
       cout<< setw(30)<< ' ' << "Filosofo " << id << " comienza a pensar" << endl;
+
       sleep_for( milliseconds( aleatorio<10,100>() ) );
  }
 }
@@ -99,11 +116,11 @@ void funcion_tenedores( int id )
 
   for (int i=0; true ; i++)
   {
-     MPI_Recv( &valor, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &estado );
+     MPI_Recv( &valor, 1, MPI_INT, MPI_ANY_SOURCE, etiq_coger, MPI_COMM_WORLD, &estado );
      id_filosofo = estado.MPI_SOURCE ;
      cout << setw(15)<< ' ' <<"Ten. " <<id <<" ha sido cogido por filo. " <<id_filosofo <<endl;
 
-     MPI_Recv( &valor, 1, MPI_INT, id_filosofo, MPI_ANY_TAG, MPI_COMM_WORLD, &estado );
+     MPI_Recv( &valor, 1, MPI_INT, id_filosofo, etiq_soltar, MPI_COMM_WORLD, &estado );
      cout << setw(15)<< ' ' <<"Ten. "<< id<< " ha sido liberado por filo. " <<id_filosofo <<endl ;
   }
 }
