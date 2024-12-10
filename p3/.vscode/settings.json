@@ -1,0 +1,8 @@
+{
+    "editor.fontFamily": "'Fira Code', menlo",
+    "files.autoSave": "afterDelay",
+    "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+    "files.associations": {
+        "iostream": "cpp"
+    }
+}

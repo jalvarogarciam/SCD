@@ -32,12 +32,12 @@ const int
    etiq_consumidor         = 2 , // identificador del proceso consumidor
    id_buffer               = 4 , // identificador del proceso buffer
    num_procesos_esperado = 10 , // número total de procesos esperado
-   num_items             = 40 , // numero de items producidos o consumidos
-   tam_vector            = 20 ; // tamaño del vector de items
+   num_items             = 20 , // numero de items producidos o consumidos
+   tam_vector            = 2 ; // tamaño del vector de items
 
 
 void test_contadores(int cont_prod[], int cont_cons[])
-{
+{ 
    bool ok = true ;
    cout << "comprobando contadores ...." << endl ;
 
@@ -82,9 +82,8 @@ template< int min, int max > int aleatorio()
 int producir(int id)
 {
    // contador de items producidos para cada productor
-   static int contador = id * (num_items/np) ; // Variable estática, solo se inicializa la primera vez
+   static int contador = id * (num_items/np); // Variable estática, solo se inicializa la primera vez
    
-
    sleep_for( milliseconds( aleatorio<10,200>()) );
    cout << "Poductor "<<id<<" ha producido valor " << contador << endl << flush ;
    return contador ++; // primero la devuelve y luego la incrementa
@@ -124,8 +123,6 @@ void funcion_productor(int id)
 
 void funcion_consumidor(int id)
 {
-   id -= np+1; // ajuste de id para que empiece en 0
-
    int         peticion,
                valor_rec = 1 ;
    MPI_Status  estado ;
@@ -222,7 +219,7 @@ int main( int argc, char *argv[] )
    MPI_Comm_size( MPI_COMM_WORLD, &num_procesos_actual ); // obtener número de procesos
 
    // comprobación de que el número de items y el tamaño del vector es múltiplo de np y de nc
-   if (num_items % np*nc != 0 || tam_vector % np != 0)
+   if (num_items % np*nc != 0)
    {
       if (id_propio == 0) {
          cerr << "El número de items y sebe ser múltiplo de np y de nc" << endl
@@ -233,12 +230,14 @@ int main( int argc, char *argv[] )
    }
    if ( num_procesos_esperado == num_procesos_actual )
    {
-      if ( id_propio < 4 )                 // si mi ident. es el del productor
+      if ( id_propio < id_buffer )                 // si mi ident. es el del productor
          funcion_productor(id_propio);     //    ejecutar función del productor
-      else if ( id_propio == 4 )           // si mi ident. es el del buffer
+      else if ( id_propio == id_buffer )           // si mi ident. es el del buffer
          funcion_buffer();                 //    ejecutar función buffer
-      else                                 // en otro caso, mi ident es consumidor
+      else{                              // en otro caso, mi ident es consumidor
+         id_propio -= np +1;
          funcion_consumidor(id_propio);    //    ejecutar función consumidor
+      }
    }
    else
    {
