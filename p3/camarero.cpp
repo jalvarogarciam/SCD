@@ -122,7 +122,7 @@ void funcion_camarero()
 
       if (estado.MPI_TAG == etiq_levantarse){
          sentados--;
-         cout<< "Filosofo " << estado.MPI_SOURCE << " se ha levantado. "<<endl;
+         cout<< "Filosofo " << estado.MPI_SOURCE << " se ha levantado. "<<endl<<flush;
 
       }else{
          cout<< "Filosofo " << estado.MPI_SOURCE << " se ha sentado. "<<endl;
@@ -143,10 +143,10 @@ void funcion_tenedores( int id )
   {
      MPI_Recv( &valor, 1, MPI_INT, MPI_ANY_SOURCE, etiq_coger, MPI_COMM_WORLD, &estado );
      id_filosofo = estado.MPI_SOURCE ;
-     cout << setw(10)<< ' ' <<"Ten. " <<id <<" ha sido cogido por filo. " <<id_filosofo <<endl;
+     cout << setw(10)<< ' ' <<"Ten. " <<id <<" ha sido cogido por filo. " <<id_filosofo <<endl<<flush;
 
      MPI_Recv( &valor, 1, MPI_INT, id_filosofo, etiq_soltar, MPI_COMM_WORLD, &estado );
-     cout << setw(10)<< ' ' <<"Ten. "<< id<< " ha sido liberado por filo. " <<id_filosofo <<endl ;
+     cout << setw(10)<< ' ' <<"Ten. "<< id<< " ha sido liberado por filo. " <<id_filosofo <<endl<<flush;
   }
 }
 

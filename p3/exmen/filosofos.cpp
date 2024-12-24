@@ -8,12 +8,13 @@
 // -----------------------------------------------------------------------------
 
 
-#include <mpi.h>
+
 #include <thread> // this_thread::sleep_for
 #include <random> // dispositivos, generadores y distribuciones aleatorias
 #include <chrono> // duraciones (duration), unidades de tiempo
 #include <iostream>
 #include <iomanip>
+#include <mpi.h>
 
 using namespace std;
 using namespace std::this_thread ;
@@ -52,38 +53,58 @@ void funcion_filosofos( int id )
 {
   int id_ten_izq = (id+1)              % num_filo_ten, //id. tenedor izq.
       id_ten_der = (id+num_filo_ten-1) % num_filo_ten; //id. tenedor der.
-   int peticion;
 
   for(int i=0; true ;i++)
   {
-      cout << setw(10)<< ' ' <<"Filósofo " <<id << " solicita ten. izq." <<id_ten_izq <<endl;
-      if (DEBUG) sleep_for( DEBUG_DELAY );
-      MPI_Ssend( &peticion, 1, MPI_INT, id_ten_izq, etiq_coger, MPI_COMM_WORLD);
-      if (DEBUG) sleep_for( DEBUG_DELAY );
-      //... solicitar el tenedor izquierdo
+      if (id != 0){
+         cout <<"Filósofo " <<id << " solicita ten. izq." <<id_ten_izq <<endl;
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_izq, etiq_coger, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
+         //... solicitar el tenedor izquierdo
 
-      cout << setw(10)<< ' ' <<"Filósofo " <<id <<" solicita ten. der." <<id_ten_der <<endl;
-      if (DEBUG) sleep_for( DEBUG_DELAY );
-      MPI_Ssend( &peticion, 1, MPI_INT, id_ten_der, etiq_coger, MPI_COMM_WORLD);
-      if (DEBUG) sleep_for( DEBUG_DELAY );
-      //... solicitar el tenedor derecho
+         cout <<"Filósofo " <<id <<" solicita ten. der." <<id_ten_der <<endl;
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_der, etiq_coger, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
+         //... solicitar el tenedor derecho
+      }else{
+         cout <<"Filósofo " <<id << " solicita ten. der." <<id_ten_izq <<endl;
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_der, etiq_coger, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
+         //... solicitar el tenedor derecho
 
-      cout<< setw(20)<< ' ' <<"Filósofo " <<id <<" comienza a comer" <<endl ;
-      sleep_for( milliseconds( aleatorio<10,1000>() ) );
+         cout <<"Filósofo " <<id <<" solicita ten. izq." <<id_ten_der <<endl;
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_izq, etiq_coger, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
+         //... solicitar el tenedor izquierdo
+      }
 
+      cout<< setw(30)<< ' ' <<"Filósofo " <<id <<" comienza a comer" <<endl ;
+      sleep_for( milliseconds( aleatorio<10,100>() ) );
 
-      cout << setw(10)<< ' ' <<"Filósofo " <<id <<" suelta ten. izq. " <<id_ten_izq <<endl;
-      MPI_Ssend( &peticion, 1, MPI_INT, id_ten_izq, etiq_soltar, MPI_COMM_WORLD);
-      if (DEBUG) sleep_for( DEBUG_DELAY );
-      // ... soltar el tenedor izquierdo
-      
-      cout << setw(10)<< ' ' << "Filósofo " <<id <<" suelta ten. der. " <<id_ten_der <<endl;
-      MPI_Ssend( &peticion, 1, MPI_INT, id_ten_der, etiq_soltar, MPI_COMM_WORLD);
-      if (DEBUG) sleep_for( DEBUG_DELAY );
-      // ... soltar el tenedor derecho
+      if (id != 0 ){
+         cout <<"Filósofo " <<id <<" suelta ten. izq. " <<id_ten_izq <<endl;
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_izq, etiq_soltar, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
+         // ... soltar el tenedor izquierdo
+         
+         cout<< "Filósofo " <<id <<" suelta ten. der. " <<id_ten_der <<endl;
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_der, etiq_soltar, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
+         // ... soltar el tenedor derecho
+      }else{
+         cout<< "Filósofo " <<id <<" suelta ten. der. " <<id_ten_der <<endl;
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_der, etiq_soltar, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
+         // ... soltar el tenedor derecho
 
-      cout<< setw(20)<< ' ' << "Filosofo " << id << " comienza a pensar" << endl;
-      sleep_for( milliseconds( aleatorio<10,1000>() ) );
+         cout <<"Filósofo " <<id <<" suelta ten. izq. " <<id_ten_izq <<endl;
+         MPI_Ssend( &id, 1, MPI_INT, id_ten_izq, etiq_soltar, MPI_COMM_WORLD);
+         if (DEBUG) sleep_for( DEBUG_DELAY );
+         // ... soltar el tenedor izquierdo
+      }
+      cout<< setw(30)<< ' ' << "Filosofo " << id << " comienza a pensar" << endl;
+
+      sleep_for( milliseconds( aleatorio<10,100>() ) );
  }
 }
 // ---------------------------------------------------------------------
@@ -136,5 +157,3 @@ int main( int argc, char** argv )
 }
 
 // ---------------------------------------------------------------------
-
-
